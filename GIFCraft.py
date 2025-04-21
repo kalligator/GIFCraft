@@ -1721,15 +1721,21 @@ class GIFEditor:
             for step in range(1, transition_frames_count + 1):
                 alpha = step / float(transition_frames_count + 1)
                 blended_frame = blend_frames(frame1, frame2, alpha)
+                # Avoid zero-delay frames
+                delay = max(1, self.delays[i] // (transition_frames_count + 1))
                 crossfade_frames.append(blended_frame)
-                crossfade_delays.append(self.delays[i] // (transition_frames_count + 1))
+                crossfade_delays.append(delay)
 
-        # Insert crossfade frames and delays at the correct positions
-        for idx in range(len(checked_indices) - 1, -1, -1):
-            i = checked_indices[idx]
-            self.frames.pop(i)
-            self.delays.pop(i)
-            self.checkbox_vars.pop(i)
+        # Append the last checked frame and its delay
+        last_idx = checked_indices[-1]
+        crossfade_frames.append(self.frames[last_idx].convert("RGBA"))
+        crossfade_delays.append(self.delays[last_idx])
+
+        # Remove checked frames in reverse order to maintain correct indices
+        for idx in reversed(checked_indices):
+            self.frames.pop(idx)
+            self.delays.pop(idx)
+            self.checkbox_vars.pop(idx)
 
         insert_index = checked_indices[0]
         for frame, delay in zip(crossfade_frames, crossfade_delays):
